@@ -1,20 +1,8 @@
 package main
 
-import (
-	"lunelerG/server/tcp"
-	"net"
-)
+import "lunelerG/server/tcp"
 
 func main() {
-
-	address := net.TCPAddr{
-		IP:   net.IPv4(0, 0, 0, 0),
-		Port: 7777,
-	}
-
-	newConn := tcp.TcpServer{
-		Addr: &address,
-	}
-
-	newConn.Bind()
+	var server tcp.TcpServer
+	server.Bind(7777)
 }
