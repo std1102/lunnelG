@@ -2,7 +2,7 @@ package session
 
 import (
 	"io"
-	"lunelerG/service/distributer"
+	"log"
 	hexid "lunelerG/utilities"
 	"net"
 	"regexp"
@@ -13,29 +13,35 @@ const RESPONSE = "RESPONSE"
 const REQUEST = "REQUEST"
 
 type RequestSession struct {
-	id         string
-	conn       net.TCPConn
-	trasmitter chan distributer.Message
+	id                   string
+	tunnelSessionId      string
+	conn                 *net.TCPConn
+	headChannel          chan Message
+	tunnelSessionChannel chan Message
 }
 
 func (r RequestSession) Start() {
-	message := distributer.NewMessage(r.id, &r.conn)
-	r.trasmitter <- *message
+	log.Printf("New comming request to relay server from :: %s \n", r.conn.RemoteAddr().String())
+	message := NewMessage(r.id, r.tunnelSessionId, r.conn)
+	r.headChannel <- *message
 	// wait and response
 	for {
-		recvMessage := <-r.trasmitter
-		if filterResponse(r.id, recvMessage.Id) {
-			io.Copy(&r.conn, recvMessage.Data)
+		recvMessage := <-r.tunnelSessionChannel
+		if filterResponse(r.id, recvMessage.RequestId) {
+			defer r.conn.Close()
+			io.Copy(r.conn, recvMessage.Data)
 			return
 		}
 	}
 }
 
-func NewRequestSession(conn net.TCPConn, transmitter chan distributer.Message) *RequestSession {
+func NewRequestSession(conn net.TCPConn, headChannel chan Message, tunnelSessionChannel chan Message, tunnelSessionId string) *RequestSession {
 	return &RequestSession{
-		id:         hexid.New(hexid.DEFAULT_LENGTH),
-		conn:       conn,
-		trasmitter: transmitter,
+		id:                   hexid.New(hexid.DEFAULT_LENGTH),
+		tunnelSessionId:      tunnelSessionId,
+		conn:                 &conn,
+		headChannel:          headChannel,
+		tunnelSessionChannel: tunnelSessionChannel,
 	}
 }
 
