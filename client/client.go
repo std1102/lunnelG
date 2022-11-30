@@ -1,10 +1,12 @@
 package client
 
 import (
+	"encoding/hex"
 	"fmt"
 	log "github.com/sirupsen/logrus"
 	"io"
 	"net"
+	"reflect"
 )
 
 func forward(src, dest net.Conn) {
@@ -29,7 +31,12 @@ func handleConnection(addr string, c net.Conn) {
 }
 
 type Client struct {
-	IPAddr string
+	IPAddr     string
+	RequestSet map[string][]byte
+}
+
+func NewClient(IPAddr string) *Client {
+	return &Client{IPAddr: IPAddr, RequestSet: make(map[string][]byte)}
 }
 
 func (r *Client) Start() {
@@ -38,13 +45,26 @@ func (r *Client) Start() {
 		fmt.Println(err)
 		log.Fatalf("Cannot bind server")
 	}
-	//defer caller.Close()
+	defer caller.Close()
+	request, dErr := net.Dial("tcp", "127.0.0.1:8081")
+	if dErr != nil {
+		fmt.Println("ERROR WHEN CONNECT TARGER " + dErr.Error())
+	}
 	for {
-		buffer := make([]byte, 1024)
-		total, err := caller.Read(buffer)
+		buffer := make([]byte, 8)
+		_, err := caller.Read(buffer)
 		if err != nil {
 			fmt.Println(err)
 		}
-		fmt.Println(string(buffer[:total]))
+		requestId := hex.EncodeToString(buffer[0:2])
+		if len(r.RequestSet[requestId]) == 0 {
+			r.RequestSet[requestId] = buffer[2:5]
+		} else {
+			tempArr := append(r.RequestSet[requestId], buffer[2:5]...)
+			r.RequestSet[requestId] = tempArr
+			if reflect.DeepEqual(buffer[2:5], make([]byte, 0, 6)) {
+				request.Write(tempArr)
+			}
+		}
 	}
 }

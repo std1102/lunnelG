@@ -15,9 +15,8 @@ func main() {
 	go rServer.Start()
 	tServer := tunnelserver.NewTunnelServer(7777, *distributor)
 	go tServer.Start()
-	gClient := client.Client{
-		IPAddr: "127.0.0.1:7777",
-	}
+	gClient := client.NewClient("127.0.0.1:7777")
 	go gClient.Start()
+
 	time.Sleep(10000000 * time.Second)
 }

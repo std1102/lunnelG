@@ -1,7 +1,6 @@
 package session
 
 import (
-	"io"
 	"log"
 	hexid "lunelerG/utilities"
 	"net"
@@ -25,14 +24,15 @@ func (r RequestSession) Start() {
 	message := NewMessage(r.id, r.tunnelSessionId, r.conn)
 	r.headChannel <- *message
 	// wait and response
-	for {
-		recvMessage := <-r.tunnelSessionChannel
-		if filterResponse(r.id, recvMessage.RequestId) {
-			defer r.conn.Close()
-			io.Copy(r.conn, recvMessage.Data)
-			return
-		}
-	}
+	// TODO handle response
+	//for {
+	//	recvMessage := <-r.tunnelSessionChannel
+	//	if filterResponse(r.id, recvMessage.RequestId) {
+	//		defer r.conn.Close()
+	//		io.Copy(r.conn, recvMessage.Data)
+	//		return
+	//	}
+	//}
 }
 
 func NewRequestSession(conn net.TCPConn, headChannel chan Message, tunnelSessionChannel chan Message, tunnelSessionId string) *RequestSession {
