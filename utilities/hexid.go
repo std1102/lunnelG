@@ -4,7 +4,6 @@ package util
 import (
 	"crypto/rand"
 	"encoding/hex"
-	"fmt"
 )
 
 const DEFAULT_LENGTH = 2
@@ -16,7 +15,6 @@ func New(n int) string {
 	data := make([]byte, n)
 
 	_, err := rand.Read(data)
-	fmt.Print(data)
 	if err != nil {
 		panic("could not read from crypto/rand")
 	}

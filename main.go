@@ -17,6 +17,5 @@ func main() {
 	go tServer.Start()
 	gClient := client.NewClient("127.0.0.1:7777")
 	go gClient.Start()
-
 	time.Sleep(10000000 * time.Second)
 }

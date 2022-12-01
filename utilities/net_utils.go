@@ -16,14 +16,12 @@ func HandleConnection(conn net.Conn) {
 		}
 	}(conn)
 	reader := bufio.NewReader(conn)
-	netData := ""
+	buffer := make([]byte, 1024)
 	for {
-		message, err := reader.ReadString('\r')
+		total, err := reader.Read(buffer)
 		if err != nil {
 			break
 		}
-		netData += message
+		fmt.Println(string(buffer[:total]))
 	}
-	fmt.Print(netData)
-	conn.Write([]byte("CON CHO"))
 }

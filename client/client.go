@@ -5,8 +5,8 @@ import (
 	"fmt"
 	log "github.com/sirupsen/logrus"
 	"io"
+	util "lunelerG/utilities"
 	"net"
-	"reflect"
 )
 
 func forward(src, dest net.Conn) {
@@ -46,11 +46,9 @@ func (r *Client) Start() {
 		log.Fatalf("Cannot bind server")
 	}
 	defer caller.Close()
-	request, dErr := net.Dial("tcp", "127.0.0.1:8081")
-	if dErr != nil {
-		fmt.Println("ERROR WHEN CONNECT TARGER " + dErr.Error())
-	}
+	index := 0
 	for {
+		index++
 		buffer := make([]byte, 8)
 		_, err := caller.Read(buffer)
 		if err != nil {
@@ -58,13 +56,46 @@ func (r *Client) Start() {
 		}
 		requestId := hex.EncodeToString(buffer[0:2])
 		if len(r.RequestSet[requestId]) == 0 {
-			r.RequestSet[requestId] = buffer[2:5]
+			r.RequestSet[requestId] = buffer[2:8]
 		} else {
-			tempArr := append(r.RequestSet[requestId], buffer[2:5]...)
+			tempArr := append(r.RequestSet[requestId], buffer[2:8]...)
 			r.RequestSet[requestId] = tempArr
-			if reflect.DeepEqual(buffer[2:5], make([]byte, 0, 6)) {
-				request.Write(tempArr)
+			if compareSlice(buffer[2:8], make([]byte, 6)) {
+				request, dErr := net.Dial("tcp", "127.0.0.1:8081")
+				if dErr != nil {
+					fmt.Println("ERROR WHEN CONNECT TARGER " + dErr.Error())
+				}
+				requestArr := backTrimSlice(tempArr)
+				request.Write(requestArr)
+				util.HandleConnection(request)
 			}
 		}
 	}
+}
+
+func compareSlice(slice1 []byte, slice2 []byte) bool {
+	if len(slice1) != len(slice2) {
+		return false
+	}
+	result := true
+	for i := range slice1 {
+		if slice1[i] != slice2[i] {
+			result = false
+		} else {
+			result = true
+		}
+	}
+	return result
+}
+
+func backTrimSlice(data []byte) []byte {
+	sliceIndex := 0
+	for i := len(data) - 1; i > 0; i-- {
+		if (data)[i] == 0 {
+			sliceIndex++
+		}
+		break
+	}
+	data = data[0 : len(data)-sliceIndex]
+	return data
 }
